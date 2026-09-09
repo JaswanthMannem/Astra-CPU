@@ -1,6 +1,7 @@
 from astra.logic.gates import validate_bit, and_gate, or_gate, not_gate
-from astra.logic.mux import mux, mux_4bit
+from astra.logic.mux import mux, mux4, mux_4bit
 from astra.logic.adder import ripple_carry_adder
+from astra.logic.decoder import decoder
 
 
 class SRLatch:
@@ -242,4 +243,101 @@ class Counter4Bit:
         )
 
         return q
-        
+
+class RegisterFile:
+    """
+    A 4 × 4-bit register file.
+
+    The register file contains four independent 4-bit registers and
+    provides one write port and one read port.
+
+    Inputs:
+        write_address: 2-bit address selecting the register to write.
+                       00 -> R0
+                       01 -> R1
+                       10 -> R2
+                       11 -> R3
+
+        write_data:    4-bit value to write.
+
+        write_enable:  If 1, the selected register is written on the
+                       rising edge of the clock.
+                       If 0, all registers retain their values.
+
+        read_address:  2-bit address selecting the register to read.
+
+        clock:         Clock signal.
+
+    Output:
+        The current 4-bit value of the register selected by
+        read_address.
+
+    Behavior:
+        - Writing occurs only on the rising edge of the clock.
+        - Only the register selected by write_address is written.
+        - Reading is combinational and does not require a clock edge.
+    """
+
+    def __init__(self) -> None:
+        """Initialize four independent 4-bit registers."""
+        self.registers = (
+            Register4Bit(),
+            Register4Bit(),
+            Register4Bit(),
+            Register4Bit()
+        )
+
+    def update(
+        self,
+        write_address: tuple[int, int],
+        write_data: tuple[int, int, int, int],
+        write_enable: int,
+        read_address: tuple[int, int],
+        clock: int
+    ) -> tuple[int, int, int, int]:
+        """
+        Perform a register-file write and return the selected read value.
+
+        The write address is decoded into four one-hot signals. Each
+        signal is combined with write_enable to determine whether its
+        corresponding register should load the new data.
+
+        The four register outputs are then passed through a 4-to-1
+        4-bit multiplexer controlled by read_address.
+        """
+
+        register_values = []
+
+        # Decode the write address to select one register.
+        write_select = decoder(write_address[0], write_address[1])
+
+        # Update all registers. Only the selected register receives
+        # an active load signal.
+        for i in range(4):
+            load = and_gate(write_enable, write_select[i])
+            register_value = self.registers[i].update(
+                write_data,
+                load,
+                clock
+            )
+            register_values.append(register_value)
+
+        # Build a 4-to-1 4-bit multiplexer using 2-to-1 4-bit MUXes.
+        output1 = mux_4bit(
+            register_values[0],
+            register_values[1],
+            read_address[1]
+        )
+
+        output2 = mux_4bit(
+            register_values[2],
+            register_values[3],
+            read_address[1]
+        )
+
+        return mux_4bit(
+            output1,
+            output2,
+            read_address[0]
+        )
+

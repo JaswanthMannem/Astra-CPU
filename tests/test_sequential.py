@@ -1,6 +1,6 @@
 import pytest
 
-from astra.logic.sequential import SRLatch, DLatch, DFlipFlop, Register1Bit, Register4Bit, Counter4Bit
+from astra.logic.sequential import SRLatch, DLatch, DFlipFlop, Register1Bit, Register4Bit, Counter4Bit, RegisterFile
 
 
 def test_sr_latch_initial_state():
@@ -395,3 +395,242 @@ def test_counter4bit_full_cycle():
     for expected in expected_values:
         counter.update(1, 0)
         assert counter.update(1, 1) == expected
+
+def test_register_file_initial_state():
+    register_file = RegisterFile()
+
+    assert register_file.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        (0, 0),
+        0
+    ) == (0, 0, 0, 0)
+
+
+def test_register_file_write_r0():
+    register_file = RegisterFile()
+
+    register_file.update(
+        (0, 0),
+        (1, 0, 1, 0),
+        1,
+        (0, 0),
+        0
+    )
+
+    assert register_file.update(
+        (0, 0),
+        (1, 0, 1, 0),
+        1,
+        (0, 0),
+        1
+    ) == (1, 0, 1, 0)
+
+
+def test_register_file_write_r1():
+    register_file = RegisterFile()
+
+    register_file.update(
+        (0, 1),
+        (1, 1, 0, 0),
+        1,
+        (0, 1),
+        0
+    )
+
+    assert register_file.update(
+        (0, 1),
+        (1, 1, 0, 0),
+        1,
+        (0, 1),
+        1
+    ) == (1, 1, 0, 0)
+
+
+def test_register_file_write_r2():
+    register_file = RegisterFile()
+
+    register_file.update(
+        (1, 0),
+        (1, 0, 1, 0),
+        1,
+        (1, 0),
+        0
+    )
+
+    assert register_file.update(
+        (1, 0),
+        (1, 0, 1, 0),
+        1,
+        (1, 0),
+        1
+    ) == (1, 0, 1, 0)
+
+
+def test_register_file_write_r3():
+    register_file = RegisterFile()
+
+    register_file.update(
+        (1, 1),
+        (0, 1, 1, 0),
+        1,
+        (1, 1),
+        0
+    )
+
+    assert register_file.update(
+        (1, 1),
+        (0, 1, 1, 0),
+        1,
+        (1, 1),
+        1
+    ) == (0, 1, 1, 0)
+
+
+def test_register_file_only_selected_register_changes():
+    register_file = RegisterFile()
+
+    # Write 0011 to R0.
+    register_file.update(
+        (0, 0),
+        (0, 0, 1, 1),
+        1,
+        (0, 0),
+        0
+    )
+
+    register_file.update(
+        (0, 0),
+        (0, 0, 1, 1),
+        1,
+        (0, 0),
+        1
+    )
+
+    # Write 1010 to R2.
+    register_file.update(
+        (1, 0),
+        (1, 0, 1, 0),
+        1,
+        (1, 0),
+        0
+    )
+
+    register_file.update(
+        (1, 0),
+        (1, 0, 1, 0),
+        1,
+        (1, 0),
+        1
+    )
+
+    # R0 should still contain 0011.
+    assert register_file.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        (0, 0),
+        0
+    ) == (0, 0, 1, 1)
+
+    # R2 should contain 1010.
+    assert register_file.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        (1, 0),
+        0
+    ) == (1, 0, 1, 0)
+
+
+def test_register_file_write_disabled():
+    register_file = RegisterFile()
+
+    # Attempt to write 1111 to R1 with write disabled.
+    register_file.update(
+        (0, 1),
+        (1, 1, 1, 1),
+        0,
+        (0, 1),
+        0
+    )
+
+    register_file.update(
+        (0, 1),
+        (1, 1, 1, 1),
+        0,
+        (0, 1),
+        1
+    )
+
+    # R1 should remain 0000.
+    assert register_file.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        (0, 1),
+        0
+    ) == (0, 0, 0, 0)
+
+
+def test_register_file_write_requires_rising_edge():
+    register_file = RegisterFile()
+
+    # Write is prepared while clock is low.
+    assert register_file.update(
+        (1, 0),
+        (1, 1, 0, 1),
+        1,
+        (1, 0),
+        0
+    ) == (0, 0, 0, 0)
+
+    # Rising edge commits the value.
+    assert register_file.update(
+        (1, 0),
+        (1, 1, 0, 1),
+        1,
+        (1, 0),
+        1
+    ) == (1, 1, 0, 1)
+
+
+def test_register_file_read_all_registers():
+    register_file = RegisterFile()
+
+    # R0 = 0011
+    register_file.update((0, 0), (0, 0, 1, 1), 1, (0, 0), 0)
+    register_file.update((0, 0), (0, 0, 1, 1), 1, (0, 0), 1)
+
+    # R1 = 0101
+    register_file.update((0, 1), (0, 1, 0, 1), 1, (0, 1), 0)
+    register_file.update((0, 1), (0, 1, 0, 1), 1, (0, 1), 1)
+
+    # R2 = 1001
+    register_file.update((1, 0), (1, 0, 0, 1), 1, (1, 0), 0)
+    register_file.update((1, 0), (1, 0, 0, 1), 1, (1, 0), 1)
+
+    # R3 = 1110
+    register_file.update((1, 1), (1, 1, 1, 0), 1, (1, 1), 0)
+    register_file.update((1, 1), (1, 1, 1, 0), 1, (1, 1), 1)
+
+    # Read R0
+    assert register_file.update(
+        (0, 0), (0, 0, 0, 0), 0, (0, 0), 0
+    ) == (0, 0, 1, 1)
+
+    # Read R1
+    assert register_file.update(
+        (0, 0), (0, 0, 0, 0), 0, (0, 1), 0
+    ) == (0, 1, 0, 1)
+
+    # Read R2
+    assert register_file.update(
+        (0, 0), (0, 0, 0, 0), 0, (1, 0), 0
+    ) == (1, 0, 0, 1)
+
+    # Read R3
+    assert register_file.update(
+        (0, 0), (0, 0, 0, 0), 0, (1, 1), 0
+    ) == (1, 1, 1, 0)
