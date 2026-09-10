@@ -1,6 +1,16 @@
 import pytest
 
-from astra.logic.sequential import SRLatch, DLatch, DFlipFlop, Register1Bit, Register4Bit, Counter4Bit, RegisterFile
+from astra.logic.sequential import ( 
+        SRLatch,
+        DLatch,
+        DFlipFlop, 
+        Register1Bit, 
+        Register4Bit, 
+        Counter4Bit, 
+        RegisterFile, 
+        RAM4Bit,
+        ProgramCounter4Bit
+        )
 
 
 def test_sr_latch_initial_state():
@@ -634,3 +644,554 @@ def test_register_file_read_all_registers():
     assert register_file.update(
         (0, 0), (0, 0, 0, 0), 0, (1, 1), 0
     ) == (1, 1, 1, 0)
+
+def test_ram4bit_initial_state():
+    ram = RAM4Bit()
+
+    assert ram.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 0, 0, 0)
+
+
+def test_ram4bit_write_m0():
+    ram = RAM4Bit()
+
+    ram.update(
+        (0, 0),
+        (1, 0, 1, 0),
+        1,
+        0
+    )
+
+    assert ram.update(
+        (0, 0),
+        (1, 0, 1, 0),
+        1,
+        1
+    ) == (1, 0, 1, 0)
+
+
+def test_ram4bit_write_m1():
+    ram = RAM4Bit()
+
+    ram.update(
+        (0, 1),
+        (1, 1, 0, 0),
+        1,
+        0
+    )
+
+    assert ram.update(
+        (0, 1),
+        (1, 1, 0, 0),
+        1,
+        1
+    ) == (1, 1, 0, 0)
+
+
+def test_ram4bit_write_m2():
+    ram = RAM4Bit()
+
+    ram.update(
+        (1, 0),
+        (1, 0, 1, 0),
+        1,
+        0
+    )
+
+    assert ram.update(
+        (1, 0),
+        (1, 0, 1, 0),
+        1,
+        1
+    ) == (1, 0, 1, 0)
+
+
+def test_ram4bit_write_m3():
+    ram = RAM4Bit()
+
+    ram.update(
+        (1, 1),
+        (0, 1, 1, 0),
+        1,
+        0
+    )
+
+    assert ram.update(
+        (1, 1),
+        (0, 1, 1, 0),
+        1,
+        1
+    ) == (0, 1, 1, 0)
+
+
+def test_ram4bit_write_disabled():
+    ram = RAM4Bit()
+
+    ram.update(
+        (1, 0),
+        (1, 1, 1, 1),
+        0,
+        0
+    )
+
+    ram.update(
+        (1, 0),
+        (1, 1, 1, 1),
+        0,
+        1
+    )
+
+    assert ram.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 0, 0, 0)
+
+
+def test_ram4bit_only_selected_location_changes():
+    ram = RAM4Bit()
+
+    # M0 = 0011
+    ram.update((0, 0), (0, 0, 1, 1), 1, 0)
+    ram.update((0, 0), (0, 0, 1, 1), 1, 1)
+
+    # M2 = 1010
+    ram.update((1, 0), (1, 0, 1, 0), 1, 0)
+    ram.update((1, 0), (1, 0, 1, 0), 1, 1)
+
+    # M0 should remain unchanged.
+    assert ram.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 0, 1, 1)
+
+    # M2 should contain the new value.
+    assert ram.update(
+        (1, 0),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (1, 0, 1, 0)
+
+    # M1 should still be zero.
+    assert ram.update(
+        (0, 1),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 0, 0, 0)
+
+    # M3 should still be zero.
+    assert ram.update(
+        (1, 1),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 0, 0, 0)
+
+
+def test_ram4bit_read_all_locations():
+    ram = RAM4Bit()
+
+    # M0 = 0011
+    ram.update((0, 0), (0, 0, 1, 1), 1, 0)
+    ram.update((0, 0), (0, 0, 1, 1), 1, 1)
+
+    # M1 = 0101
+    ram.update((0, 1), (0, 1, 0, 1), 1, 0)
+    ram.update((0, 1), (0, 1, 0, 1), 1, 1)
+
+    # M2 = 1001
+    ram.update((1, 0), (1, 0, 0, 1), 1, 0)
+    ram.update((1, 0), (1, 0, 0, 1), 1, 1)
+
+    # M3 = 1110
+    ram.update((1, 1), (1, 1, 1, 0), 1, 0)
+    ram.update((1, 1), (1, 1, 1, 0), 1, 1)
+
+    # Read M0
+    assert ram.update(
+        (0, 0),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 0, 1, 1)
+
+    # Read M1
+    assert ram.update(
+        (0, 1),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 1, 0, 1)
+
+    # Read M2
+    assert ram.update(
+        (1, 0),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (1, 0, 0, 1)
+
+    # Read M3
+    assert ram.update(
+        (1, 1),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (1, 1, 1, 0)
+
+
+def test_ram4bit_write_requires_rising_edge():
+    ram = RAM4Bit()
+
+    # Write is prepared while clock is low.
+    assert ram.update(
+        (1, 0),
+        (1, 1, 0, 1),
+        1,
+        0
+    ) == (0, 0, 0, 0)
+
+    # Rising edge commits the value.
+    assert ram.update(
+        (1, 0),
+        (1, 1, 0, 1),
+        1,
+        1
+    ) == (1, 1, 0, 1)
+
+
+def test_ram4bit_overwrite_existing_value():
+    ram = RAM4Bit()
+
+    # M1 = 0011
+    ram.update((0, 1), (0, 0, 1, 1), 1, 0)
+    ram.update((0, 1), (0, 0, 1, 1), 1, 1)
+
+    assert ram.update(
+        (0, 1),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (0, 0, 1, 1)
+
+    # Overwrite M1 with 1100.
+    ram.update((0, 1), (1, 1, 0, 0), 1, 0)
+    ram.update((0, 1), (1, 1, 0, 0), 1, 1)
+
+    assert ram.update(
+        (0, 1),
+        (0, 0, 0, 0),
+        0,
+        0
+    ) == (1, 1, 0, 0)
+
+def test_program_counter_initial_state():
+    pc = ProgramCounter4Bit()
+
+    assert pc.update(
+        (0, 0, 0, 0),
+        0,
+        0,
+        0,
+        0
+    ) == (0, 0, 0, 0)
+
+
+def test_program_counter_load():
+    pc = ProgramCounter4Bit()
+
+    load_data = (1, 0, 1, 0)
+
+    # Clock low
+    pc.update(load_data, 1, 0, 0, 0)
+
+    # Rising edge
+    result = pc.update(load_data, 1, 0, 0, 1)
+
+    assert result == (1, 0, 1, 0)
+
+
+def test_program_counter_increment():
+    pc = ProgramCounter4Bit()
+
+    # Load 1010
+    pc.update((1, 0, 1, 0), 1, 0, 0, 0)
+    pc.update((1, 0, 1, 0), 1, 0, 0, 1)
+
+    # Return clock low before next rising edge
+    pc.update((0, 0, 0, 0), 0, 1, 0, 0)
+
+    # Increment
+    result = pc.update(
+        (0, 0, 0, 0),
+        0,
+        1,
+        0,
+        1
+    )
+
+    assert result == (1, 0, 1, 1)
+
+
+def test_program_counter_holds():
+    pc = ProgramCounter4Bit()
+
+    # Load 1011
+    pc.update((1, 0, 1, 1), 1, 0, 0, 0)
+    pc.update((1, 0, 1, 1), 1, 0, 0, 1)
+
+    # Clock low
+    pc.update((0, 0, 0, 0), 0, 0, 0, 0)
+
+    # Hold
+    result = pc.update(
+        (0, 0, 0, 0),
+        0,
+        0,
+        0,
+        1
+    )
+
+    assert result == (1, 0, 1, 1)
+
+
+def test_program_counter_reset():
+    pc = ProgramCounter4Bit()
+
+    # Load 1010
+    pc.update((1, 0, 1, 0), 1, 0, 0, 0)
+    pc.update((1, 0, 1, 0), 1, 0, 0, 1)
+
+    # Clock low
+    pc.update((0, 0, 0, 0), 0, 0, 1, 0)
+
+    # Reset
+    result = pc.update(
+        (0, 0, 0, 0),
+        0,
+        0,
+        1,
+        1
+    )
+
+    assert result == (0, 0, 0, 0)
+
+
+def test_program_counter_increments_multiple_times():
+    pc = ProgramCounter4Bit()
+
+    # Start at 0000
+    result = (0, 0, 0, 0)
+
+    for expected in [
+        (0, 0, 0, 1),
+        (0, 0, 1, 0),
+        (0, 0, 1, 1),
+        (0, 1, 0, 0),
+    ]:
+        # Falling/low phase
+        pc.update(
+            (0, 0, 0, 0),
+            0,
+            1,
+            0,
+            0
+        )
+
+        # Rising edge
+        result = pc.update(
+            (0, 0, 0, 0),
+            0,
+            1,
+            0,
+            1
+        )
+
+        assert result == expected
+
+
+def test_program_counter_wraps_around():
+    pc = ProgramCounter4Bit()
+
+    # Load 1111
+    pc.update((1, 1, 1, 1), 1, 0, 0, 0)
+    pc.update((1, 1, 1, 1), 1, 0, 0, 1)
+
+    # Increment from 1111
+    pc.update((0, 0, 0, 0), 0, 1, 0, 0)
+
+    result = pc.update(
+        (0, 0, 0, 0),
+        0,
+        1,
+        0,
+        1
+    )
+
+    assert result == (0, 0, 0, 0)
+
+
+def test_program_counter_load_has_priority_over_increment():
+    pc = ProgramCounter4Bit()
+
+    # Current PC = 0101
+    pc.update((0, 1, 0, 1), 1, 0, 0, 0)
+    pc.update((0, 1, 0, 1), 1, 0, 0, 1)
+
+    # Both load and increment are enabled.
+    # Load must win.
+    pc.update((1, 0, 1, 0), 1, 1, 0, 0)
+
+    result = pc.update(
+        (1, 0, 1, 0),
+        1,
+        1,
+        0,
+        1
+    )
+
+    assert result == (1, 0, 1, 0)
+
+
+def test_program_counter_reset_has_priority_over_load():
+    pc = ProgramCounter4Bit()
+
+    # Current PC = 0101
+    pc.update((0, 1, 0, 1), 1, 0, 0, 0)
+    pc.update((0, 1, 0, 1), 1, 0, 0, 1)
+
+    # Reset and load are both enabled.
+    # Reset must win.
+    pc.update((1, 0, 1, 0), 1, 0, 1, 0)
+
+    result = pc.update(
+        (1, 0, 1, 0),
+        1,
+        0,
+        1,
+        1
+    )
+
+    assert result == (0, 0, 0, 0)
+
+
+def test_program_counter_reset_has_priority_over_increment():
+    pc = ProgramCounter4Bit()
+
+    # Current PC = 0101
+    pc.update((0, 1, 0, 1), 1, 0, 0, 0)
+    pc.update((0, 1, 0, 1), 1, 0, 0, 1)
+
+    # Reset and increment are both enabled.
+    # Reset must win.
+    pc.update((0, 0, 0, 0), 0, 1, 1, 0)
+
+    result = pc.update(
+        (0, 0, 0, 0),
+        0,
+        1,
+        1,
+        1
+    )
+
+    assert result == (0, 0, 0, 0)
+
+
+def test_program_counter_does_not_change_before_rising_edge():
+    pc = ProgramCounter4Bit()
+
+    # Load while clock is low.
+    result = pc.update(
+        (1, 0, 1, 0),
+        1,
+        0,
+        0,
+        0
+    )
+
+    assert result == (0, 0, 0, 0)
+
+    # Rising edge performs the load.
+    result = pc.update(
+        (1, 0, 1, 0),
+        1,
+        0,
+        0,
+        1
+    )
+
+    assert result == (1, 0, 1, 0)
+
+
+def test_program_counter_rejects_invalid_load():
+    pc = ProgramCounter4Bit()
+
+    with pytest.raises(ValueError):
+        pc.update(
+            (1, 0, 2, 0),
+            1,
+            0,
+            0,
+            0
+        )
+
+
+def test_program_counter_rejects_invalid_load_control():
+    pc = ProgramCounter4Bit()
+
+    with pytest.raises(ValueError):
+        pc.update(
+            (0, 0, 0, 0),
+            2,
+            0,
+            0,
+            0
+        )
+
+
+def test_program_counter_rejects_invalid_increment_control():
+    pc = ProgramCounter4Bit()
+
+    with pytest.raises(ValueError):
+        pc.update(
+            (0, 0, 0, 0),
+            0,
+            2,
+            0,
+            0
+        )
+
+
+def test_program_counter_rejects_invalid_reset_control():
+    pc = ProgramCounter4Bit()
+
+    with pytest.raises(ValueError):
+        pc.update(
+            (0, 0, 0, 0),
+            0,
+            0,
+            2,
+            0
+        )
+
+
+def test_program_counter_rejects_invalid_clock():
+    pc = ProgramCounter4Bit()
+
+    with pytest.raises(ValueError):
+        pc.update(
+            (0, 0, 0, 0),
+            0,
+            0,
+            0,
+            2
+        )

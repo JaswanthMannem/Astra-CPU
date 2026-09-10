@@ -341,3 +341,153 @@ class RegisterFile:
             read_address[0]
         )
 
+class RAM4Bit:
+    """
+    A 4 × 4-bit RAM.
+
+    The RAM contains four 4-bit memory locations addressed by a 2-bit address.
+
+    Inputs:
+        address: 2-bit memory address.
+        data: 4-bit value to write.
+        write_enable: Enables writing to the selected memory location.
+        clock: Clock signal for synchronous writes.
+
+    Output:
+        The current 4-bit value stored at the selected memory address.
+
+    Behavior:
+        - Writes occur only on the rising edge of the clock.
+        - Reads are combinational.
+        - Only the addressed memory location is written.
+    """
+
+    def __init__(self) -> None:
+        """Initialize four independent 4-bit memory locations."""
+        self.memory = (
+            Register4Bit(),
+            Register4Bit(),
+            Register4Bit(),
+            Register4Bit()
+        )
+
+    def update(
+        self,
+        address: tuple[int, int],
+        data: tuple[int, int, int, int],
+        write_enable: int,
+        clock: int
+    ) -> tuple[int, int, int, int]:
+
+        memory_values = []
+
+        write_select = decoder(address[0], address[1])
+
+        for i in range(4):
+            load = and_gate(write_enable, write_select[i])
+
+            memory_value = self.memory[i].update(
+                data,
+                load,
+                clock
+            )
+
+            memory_values.append(memory_value)
+
+        output1 = mux_4bit(
+            memory_values[0],
+            memory_values[1],
+            address[1]
+        )
+
+        output2 = mux_4bit(
+            memory_values[2],
+            memory_values[3],
+            address[1]
+        )
+
+        return mux_4bit(
+            output1,
+            output2,
+            address[0]
+        )
+
+class ProgramCounter4Bit:
+    """
+    A 4-bit Program Counter (PC).
+
+    The program counter stores the address of the next instruction
+    to be executed by the CPU.
+
+    Inputs:
+        load_data:    4-bit value to load into the PC.
+        load:         If 1, load load_data into the PC.
+        increment:    If 1, increment the current PC by 1.
+        reset:        If 1, reset the PC to 0000.
+        clock:        Clock signal.
+
+    Output:
+        The current 4-bit PC value.
+
+    Operation priority:
+        reset > load > increment > hold
+
+    Behavior:
+        - Reset sets the PC to 0000.
+        - Load replaces the current PC with load_data.
+        - Increment increases the PC by 1.
+        - If no operation is enabled, the PC holds its value.
+        - Updates occur on the rising edge of the clock.
+        - Incrementing 1111 wraps around to 0000.
+    """
+
+    def __init__(self) -> None:
+        self.register = Register4Bit()
+
+    def update(
+        self,
+        load_data: tuple[int, int, int, int],
+        load: int,
+        increment: int,
+        reset: int,
+        clock: int
+    ) -> tuple[int, int, int, int]:
+
+        current_data = tuple(
+            register.dff.slave.latch.q
+            for register in self.register.registers
+        )
+
+        # Calculate PC + 1.
+        incremented_data, _ = ripple_carry_adder(
+            current_data,
+            (0, 0, 0, 1)
+        )
+
+        # Priority: increment < load < reset.
+        incremented_result = mux_4bit(
+            current_data,
+            incremented_data,
+            increment
+        )
+
+        loaded_result = mux_4bit(
+            incremented_result,
+            load_data,
+            load
+        )
+
+        next_data = mux_4bit(
+            loaded_result,
+            (0, 0, 0, 0),
+            reset
+        )
+
+        # Store the selected next value on the clock edge.
+        q = self.register.update(
+            next_data,
+            1,
+            clock
+        )
+
+        return q
