@@ -41,3 +41,5 @@ def ripple_carry_adder(a: tuple[int,int, int, int], b: tuple[int,int, int, int],
     sum_bits.reverse()  # Reverse to maintain the correct order of bits
 
     return tuple(sum_bits), carry
+
+        

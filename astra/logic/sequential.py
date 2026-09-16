@@ -2,6 +2,7 @@ from astra.logic.gates import validate_bit, and_gate, or_gate, not_gate
 from astra.logic.mux import mux, mux4, mux_4bit
 from astra.logic.adder import ripple_carry_adder
 from astra.logic.decoder import decoder
+from astra.logic.incrementer import Incrementer4Bit
 
 
 class SRLatch:
@@ -443,6 +444,7 @@ class ProgramCounter4Bit:
 
     def __init__(self) -> None:
         self.register = Register4Bit()
+        self.incrementer = Incrementer4Bit()
 
     def update(
         self,
@@ -458,16 +460,10 @@ class ProgramCounter4Bit:
             for register in self.register.registers
         )
 
-        # Calculate PC + 1.
-        incremented_data, _ = ripple_carry_adder(
-            current_data,
-            (0, 0, 0, 1)
-        )
-
         # Priority: increment < load < reset.
         incremented_result = mux_4bit(
             current_data,
-            incremented_data,
+            self.incrementer.increment(current_data),
             increment
         )
 
