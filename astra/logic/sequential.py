@@ -487,6 +487,75 @@ class RegisterFile:
 
         return read_data_a, read_data_b
 
+    def read(
+        self,
+        read_address_a: tuple[int, int],
+        read_address_b: tuple[int, int]
+    ) -> tuple[
+        tuple[int, int, int, int],
+        tuple[int, int, int, int]
+    ]:
+        """
+        Read two registers using the two independent read ports.
+
+        Reading is combinational and does not require a clock edge.
+
+        Args:
+            read_address_a: 2-bit address for read port A.
+            read_address_b: 2-bit address for read port B.
+
+        Returns:
+            A tuple containing:
+                - data from read port A
+                - data from read port B
+        """
+
+        register_values = tuple(
+            tuple(
+                register.dff.slave.latch.q
+                for register in self.registers[i].registers
+            )
+            for i in range(4)
+        )
+
+        output_a_1 = mux_4bit(
+            register_values[0],
+            register_values[1],
+            read_address_a[1]
+        )
+
+        output_a_2 = mux_4bit(
+            register_values[2],
+            register_values[3],
+            read_address_a[1]
+        )
+
+        read_data_a = mux_4bit(
+            output_a_1,
+            output_a_2,
+            read_address_a[0]
+        )
+
+        output_b_1 = mux_4bit(
+            register_values[0],
+            register_values[1],
+            read_address_b[1]
+        )
+
+        output_b_2 = mux_4bit(
+            register_values[2],
+            register_values[3],
+            read_address_b[1]
+        )
+
+        read_data_b = mux_4bit(
+            output_b_1,
+            output_b_2,
+            read_address_b[0]
+        )
+
+        return read_data_a, read_data_b
+
 class RAM4Bit:
     """
     A 4 × 4-bit RAM.
