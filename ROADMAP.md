@@ -4,7 +4,33 @@ Astra is a computer architecture project built from the ground up, starting with
 
 The project is developed incrementally:
 
-**small components → combinational logic → arithmetic → ALU → sequential logic → registers → memory → datapath → ISA → CPU → assembler → programs → complete computer**
+```text
+small components
+    ↓
+combinational logic
+    ↓
+arithmetic
+    ↓
+ALU
+    ↓
+sequential logic
+    ↓
+registers
+    ↓
+memory
+    ↓
+datapath
+    ↓
+ISA
+    ↓
+CPU
+    ↓
+assembler
+    ↓
+programs
+    ↓
+complete computer
+```
 
 The goal is not only to make Astra work, but to understand how each layer is constructed from the layer below it.
 
@@ -46,7 +72,7 @@ Build components that allow Astra to select and route data.
 
 ### Goal
 
-Build reliable data-selection and routing components that will later be used throughout the CPU.
+Build reliable data-selection and routing components.
 
 ---
 
@@ -80,7 +106,7 @@ Extend 1-bit operations to operate on multiple bits.
 
 ### Implementation Principle
 
-Astra should be built **one bit at a time**.
+Astra is built one bit at a time.
 
 ```text
 A = A3 A2 A1 A0
@@ -94,15 +120,11 @@ A0, B0 → operation
 
 The same 1-bit operation is reused for every bit.
 
-### Goal
-
-Learn how simple 1-bit components scale into wider digital operations.
-
 ---
 
 ## Phase 5 — Arithmetic
 
-Build arithmetic components from the previously implemented logic.
+Build arithmetic components from previously implemented logic.
 
 ### Half Adder
 
@@ -137,7 +159,7 @@ Create reliable arithmetic building blocks that can be reused by the ALU.
 
 ## Phase 6 — ALU
 
-The ALU is the first major integration point of Astra. It combines logical and arithmetic operations and selects which result should be produced.
+The ALU is the first major integration point of Astra.
 
 ### Logical Operations
 
@@ -145,8 +167,6 @@ The ALU is the first major integration point of Astra. It combines logical and a
 - [x] 4-bit OR
 - [x] 4-bit XOR
 - [x] 4-bit NOT
-
-*Logical operations operate one bit at a time.*
 
 ### Arithmetic Operations
 
@@ -182,39 +202,6 @@ The ALU is the first major integration point of Astra. It combines logical and a
 - [x] Test invalid inputs
 - [x] Integration tests
 
-### ALU Design Principle
-
-For logical operations:
-
-```text
-A3, B3 → logic operation
-A2, B2 → logic operation
-A1, B1 → logic operation
-A0, B0 → logic operation
-```
-
-For addition:
-
-```text
-A0 ──┐
-B0 ──┼→ Full Adder ─→ S0
-     │       │
-     │      Carry
-     │        ↓
-A1 ──┐
-B1 ──┼→ Full Adder ─→ S1
-     │       │
-     │      Carry
-     │        ↓
-A2 ──┐
-B2 ──┼→ Full Adder ─→ S2
-     │       │
-     │      Carry
-     │        ↓
-A3 ──┐
-B3 ──┼→ Full Adder ─→ S3
-```
-
 ### Goal
 
 Create the computational core of Astra.
@@ -225,32 +212,17 @@ Create the computational core of Astra.
 
 Introduce state and memory into the system.
 
-### Storage Elements
-
 - [x] SR latch
 - [x] D latch
-- [x] D flip-flop
-- [ ] Clock input
-- [ ] Reset behavior
+- [x] Master-slave D flip-flop
+- [x] Rising-edge behavior
+- [x] Synchronous state updates
 - [x] State-transition tests
+- [ ] Unified reset abstraction
 
 ### Goal
 
-Understand the difference between:
-
-```text
-Combinational Logic:
-Input → Output
-```
-
-and:
-
-```text
-Sequential Logic:
-Input + Previous State → Output + New State
-```
-
-This phase introduces the concept of a computer being able to **remember** information.
+Understand how sequential logic stores information and changes state on clock events.
 
 ---
 
@@ -258,20 +230,23 @@ This phase introduces the concept of a computer being able to **remember** infor
 
 Build the timing foundation of Astra.
 
-- [ ] Clock abstraction
-- [ ] Clock cycles
 - [x] Rising/falling edge behavior
 - [x] Synchronous state updates
-- [ ] Reset cycle
 - [x] Clock-driven tests
+- [ ] Standalone clock abstraction
+- [ ] Unified reset cycle
+
+### Current Status
+
+Astra components already use explicit clock phases and demonstrate rising-edge/synchronous behavior. A separate system-wide clock abstraction is not required by V1.
 
 ### Goal
 
-Synchronize state changes so that Astra's components can operate together.
+Provide a cleaner timing model for future versions.
 
 ---
 
-## Phase 9 — Registers
+## Phase 9 — Registers & Register File
 
 Build storage components used by the processor.
 
@@ -280,22 +255,22 @@ Build storage components used by the processor.
 - [x] 1-bit register
 - [x] 4-bit register
 - [x] Register load control
-- [ ] Register enable
-- [ ] Register reset
 - [x] Register tests
+- [ ] Generic register-enable abstraction
+- [ ] Generic register-reset abstraction
 
 ### Register File
 
-- [ ] Define register count
-- [ ] Register addressing
-- [ ] Read operation
-- [ ] Write operation
-- [ ] Write enable
-- [ ] Register file tests
+- [x] 4 registers
+- [x] 2-bit register addressing
+- [x] Two independent read ports
+- [x] Single write port
+- [x] Write enable
+- [x] Register file tests
 
 ### Goal
 
-Provide the CPU with fast temporary storage.
+Provide fast temporary storage for the CPU.
 
 ---
 
@@ -303,19 +278,20 @@ Provide the CPU with fast temporary storage.
 
 Build components that allow the processor to track execution.
 
-- [ ] Incrementer
-- [x] Counter
-- [ ] Program Counter (PC)
-- [ ] PC increment
-- [ ] PC load
-- [ ] PC reset
-- [ ] Jump support
-- [ ] Branch support
-- [ ] PC tests
+- [x] 4-bit incrementer
+- [x] 4-bit counter
+- [x] 4-bit Program Counter
+- [x] PC increment
+- [x] PC load
+- [x] PC reset
+- [x] Jump support
+- [x] PC wraparound
+- [x] PC tests
+- [ ] Conditional branch support
 
 ### Goal
 
-Create the mechanism that determines which instruction the CPU executes next.
+Create the mechanism that determines which instruction executes next.
 
 ---
 
@@ -323,23 +299,24 @@ Create the mechanism that determines which instruction the CPU executes next.
 
 Build the storage system used by Astra.
 
-### RAM
+### Data Memory
 
-- [ ] Basic memory cell
-- [ ] Address selection
-- [ ] Read operation
-- [ ] Write operation
-- [ ] Write enable
-- [ ] Multi-word RAM
-- [ ] RAM tests
-- [ ] Boundary tests
+- [x] Basic memory cells
+- [x] Address selection
+- [x] Read operation
+- [x] Write operation
+- [x] Write enable
+- [x] 16 × 4-bit data memory
+- [x] RAM tests
+- [x] Boundary tests
 
-### Program / Instruction Memory
+### Instruction Memory
 
-- [ ] Program storage
-- [ ] Instruction fetching
-- [ ] Program counter integration
-- [ ] Instruction memory tests
+- [x] 16 × 8-bit instruction memory
+- [x] Program storage
+- [x] Instruction fetching
+- [x] Program counter integration
+- [x] Instruction memory tests
 
 ### Goal
 
@@ -347,28 +324,19 @@ Allow Astra to store both program instructions and data.
 
 ---
 
-## Phase 12 — Bus & Datapath
+## Phase 12 — Datapath
 
 Connect the major hardware components together.
 
-### Bus
-
-- [ ] Define internal data bus
-- [ ] Data routing
-- [ ] Bus selection
-- [ ] Bus control
-
-### Datapath
-
-- [ ] Connect registers
-- [ ] Connect ALU
-- [ ] Connect program counter
-- [ ] Connect instruction register
-- [ ] Register → ALU path
-- [ ] ALU → register path
-- [ ] Memory → register path
-- [ ] Register → memory path
-- [ ] PC → instruction memory path
+- [x] Register file integration
+- [x] ALU integration
+- [x] Register → ALU path
+- [x] ALU → register path
+- [x] Memory → register path
+- [x] Register → memory path
+- [x] Program counter integration
+- [x] Instruction fetch path
+- [x] Datapath tests
 
 ### Goal
 
@@ -376,67 +344,48 @@ Create the physical/logical paths through which information moves inside Astra.
 
 ---
 
-## Phase 13 — Instruction Set Architecture (ISA)
+## Phase 13 — Instruction Set Architecture
 
-Define Astra's machine language before the final CPU control logic is implemented.
+Define Astra's machine language.
 
 ### Instruction Format
 
-- [ ] Define instruction width
-- [ ] Define opcode size
-- [ ] Define register fields
-- [ ] Define immediate fields
-- [ ] Define address fields
-- [ ] Define instruction types
+- [x] 8-bit instruction width
+- [x] 4-bit opcode
+- [x] 2-bit register fields
+- [x] 4-bit address fields
+- [x] R-type format
+- [x] N-type format
+- [x] M-type two-word format
+- [x] J-type format
+- [x] H-type format
 
-### Instruction Categories
+### Instruction Set
 
-#### Data Movement
+- [x] ADD
+- [x] SUB
+- [x] AND
+- [x] OR
+- [x] XOR
+- [x] NOT
+- [x] LOAD
+- [x] STORE
+- [x] JUMP
+- [x] HALT
 
-- [ ] LOAD
-- [ ] STORE
-- [ ] MOV
+### Encoding & Decoding
 
-#### Arithmetic
-
-- [ ] ADD
-- [ ] SUB
-
-#### Logic
-
-- [ ] AND
-- [ ] OR
-- [ ] XOR
-- [ ] NOT
-
-#### Comparison
-
-- [ ] CMP
-- [ ] Equality comparison
-- [ ] Greater/less comparison
-
-#### Control Flow
-
-- [ ] JMP
-- [ ] Conditional branch
-- [ ] CALL
-- [ ] RETURN
-- [ ] HALT
-
-### Encoding
-
-- [ ] Define machine-code encoding
-- [ ] Define opcode table
-- [ ] Define register encoding
-- [ ] Define immediate encoding
-- [ ] Define branch encoding
-
-### Decoder
-
-- [ ] Instruction decoder
-- [ ] Opcode decoding
-- [ ] Operand extraction
-- [ ] Invalid instruction detection
+- [x] Opcode table
+- [x] Register encoding
+- [x] Instruction encoding
+- [x] Instruction decoder
+- [x] Opcode decoding
+- [x] Operand extraction
+- [x] JUMP address decoding
+- [x] LOAD/STORE address-word decoding
+- [x] Invalid instruction detection
+- [x] Encoder tests
+- [x] Decoder tests
 
 ### Goal
 
@@ -450,27 +399,28 @@ Build the logic responsible for controlling the processor.
 
 ### Control Signals
 
-- [ ] ALU control signals
-- [ ] Register control signals
-- [ ] Memory control signals
-- [ ] PC control signals
-- [ ] Instruction register control
+- [x] ALU control signals
+- [x] Register control signals
+- [x] Memory control signals
+- [x] PC control signals
+- [x] Halt control
 
 ### Instruction Cycle
 
-- [ ] Fetch
-- [ ] Decode
-- [ ] Execute
-- [ ] Memory access
-- [ ] Write-back
+- [x] Fetch
+- [x] Decode
+- [x] Execute
+- [x] Memory access
+- [x] Write-back
+- [x] PC update
 
 ### Sequencing
 
-- [ ] Instruction sequencing
-- [ ] Multi-cycle instructions where necessary
-- [ ] Branch control
-- [ ] Jump control
-- [ ] Reset sequence
+- [x] Instruction sequencing
+- [x] LOAD/STORE multi-word sequencing
+- [x] Jump control
+- [x] Halt control
+- [x] Reset sequence
 
 ### Goal
 
@@ -483,51 +433,55 @@ Turn the datapath into a processor capable of executing instructions.
 Integrate all major hardware components.
 
 ```text
-                 ┌─────────────────────┐
-                 │     Control Unit    │
-                 └──────────┬──────────┘
-                            │
-                            ▼
-       ┌─────────────────────────────────────┐
-       │              Datapath               │
-       │                                     │
-       │ Registers → ALU → Registers         │
-       │     ↑           ↓                   │
-       │     └───── BUS ─┘                   │
-       └──────────────────┬──────────────────┘
-                          │
-                          ▼
-                       Memory
+             ┌─────────────────┐
+             │  Control Unit   │
+             └────────┬────────┘
+                      │
+                      ▼
+        ┌───────────────────────────┐
+        │          Datapath         │
+        │                           │
+        │ Register File → ALU       │
+        │       ↑           ↓       │
+        │       └── Memory ─┘       │
+        └─────────────┬─────────────┘
+                      │
+                      ▼
+                Instruction
+                  Memory
 ```
 
 ### Integration
 
-- [ ] Integrate ALU
-- [ ] Integrate register file
-- [ ] Integrate program counter
-- [ ] Integrate instruction register
-- [ ] Integrate instruction decoder
-- [ ] Integrate control unit
-- [ ] Integrate memory
-- [ ] Integrate buses
+- [x] Integrate ALU
+- [x] Integrate register file
+- [x] Integrate program counter
+- [x] Integrate instruction decoder
+- [x] Integrate control unit
+- [x] Integrate data memory
+- [x] Integrate instruction memory
+- [x] Integrate fetch/decode logic
+- [x] Integrate CPU cycle
 
 ### CPU Execution
 
-- [ ] Fetch instruction
-- [ ] Decode instruction
-- [ ] Execute instruction
-- [ ] Access memory
-- [ ] Write result
-- [ ] Update PC
+- [x] Fetch instruction
+- [x] Decode instruction
+- [x] Execute instruction
+- [x] Access memory
+- [x] Write result
+- [x] Update PC
+- [x] HALT execution
+- [x] CPU reset
 
 ### CPU Tests
 
-- [ ] Individual instruction tests
-- [ ] Multi-instruction tests
-- [ ] Branch tests
-- [ ] Memory tests
-- [x] Register tests
-- [ ] Full CPU integration tests
+- [x] Individual instruction tests
+- [x] Multi-instruction tests
+- [x] Memory tests
+- [x] Full CPU integration tests
+- [x] CPU reset tests
+- [x] End-to-end execution tests
 
 ### Goal
 
@@ -541,11 +495,11 @@ Build tools that make Astra observable and easy to debug.
 
 ### CPU Simulator
 
-- [ ] Clock the CPU
-- [ ] Execute one instruction
-- [ ] Execute multiple instructions
-- [ ] Run until HALT
-- [ ] Reset CPU
+- [x] Execute one instruction
+- [x] Execute multiple instructions
+- [x] Run until HALT
+- [x] Reset CPU
+- [ ] Dedicated clock abstraction
 
 ### Debug Information
 
@@ -559,16 +513,16 @@ Build tools that make Astra observable and easy to debug.
 
 ### Debugger
 
-- [ ] Step instruction
-- [ ] Run / pause
+- [x] Step instruction API
+- [ ] Run / pause UI
 - [ ] Set breakpoints
-- [ ] Inspect registers
-- [ ] Inspect memory
+- [ ] Inspect registers interactively
+- [ ] Inspect memory interactively
 - [ ] Trace instructions
 
 ### Goal
 
-Make it possible to see **exactly what Astra is doing internally** while a program executes.
+Make it possible to see exactly what Astra is doing internally while a program executes.
 
 ---
 
@@ -578,35 +532,28 @@ Create a way to write Astra programs using assembly language.
 
 ### Assembly Language
 
-- [ ] Define assembly syntax
-- [ ] Define registers
-- [ ] Define instructions
-- [ ] Define operands
-- [ ] Define immediate values
-- [ ] Define labels
-
-Example:
-
-```asm
-LOAD R1, 10
-LOAD R2, 20
-ADD  R3, R1, R2
-HALT
-```
+- [x] Assembly syntax
+- [x] Registers
+- [x] Instructions
+- [x] Operands
+- [x] Numeric addresses
+- [x] Labels
+- [x] Comments
+- [x] Case-insensitive syntax
 
 ### Assembler Implementation
 
-- [ ] Tokenizer
-- [ ] Parser
-- [ ] Instruction validation
-- [ ] Instruction encoding
-- [ ] Register encoding
-- [ ] Immediate encoding
-- [ ] Label handling
-- [ ] Address resolution
-- [ ] Assembly → machine code
-- [ ] Assembler error messages
-- [ ] Assembler tests
+- [x] Two-pass assembler
+- [x] Instruction validation
+- [x] Instruction encoding
+- [x] Register encoding
+- [x] Label handling
+- [x] Address resolution
+- [x] Assembly → instruction objects
+- [x] Assembler error messages
+- [x] Assembler tests
+- [x] Label tests
+- [x] Assembler execution tests
 
 ### Goal
 
@@ -618,22 +565,24 @@ Allow humans to program Astra without writing raw machine code.
 
 Run real programs on the Astra CPU.
 
-### Basic Programs
+### V1 Examples
 
-- [ ] Arithmetic program
-- [ ] Memory program
+- [x] Arithmetic program
+- [x] Subtraction program
+- [x] Memory program
+- [x] Jump program
+- [x] Label program
+- [x] Example integration tests
+
+### Future Programs
+
 - [ ] Loop program
 - [ ] Conditional program
-- [x] Counter program
 - [ ] Fibonacci program
-
-### Advanced Programs
-
-- [ ] Function/subroutine program
 - [ ] Array manipulation
 - [ ] Searching
 - [ ] Sorting
-- [ ] Larger multi-function program
+- [ ] Function/subroutine program
 
 ### Goal
 
@@ -645,25 +594,17 @@ Demonstrate that Astra is not merely a collection of circuits, but a programmabl
 
 Give Astra a way to communicate with the outside world.
 
-### Basic I/O
-
 - [ ] Input abstraction
 - [ ] Output abstraction
 - [ ] Output device
 - [ ] Input device
-
-### Memory-Mapped I/O
-
-- [ ] Define I/O address range
-- [ ] Map devices to addresses
+- [ ] Memory-mapped I/O
+- [ ] I/O address range
 - [ ] CPU → device communication
 - [ ] Device → CPU communication
-
-### Display
-
 - [ ] Basic text output
-- [ ] Simple display abstraction
-- [ ] Display tests
+- [ ] Display abstraction
+- [ ] I/O tests
 
 ### Goal
 
@@ -673,7 +614,7 @@ Allow Astra programs to interact with external devices.
 
 ## Phase 20 — Astra Runtime / Tiny Operating Environment
 
-Build a minimal software layer on top of the CPU. This does **not** need to become a full modern operating system.
+Build a minimal software layer on top of the CPU.
 
 ### Runtime
 
@@ -701,46 +642,41 @@ Create a small software environment that runs on Astra hardware.
 Integrate the entire project.
 
 ```text
-                 ASTRA COMPUTER
-                       │
-              ┌────────┴────────┐
-              │                 │
-             CPU              Memory
-              │                 │
-              ├────── BUS ──────┤
-              │
-         ┌────┴────┐
-         │   ALU   │
-         └────┬────┘
-              │
-        ┌─────┴─────┐
-        │ Registers │
-        └─────┬─────┘
-              │
-         Control Unit
-              │
-              ▼
-        Astra Program
-              │
-              ▼
-          Assembler
+Assembly Source
+      ↓
+   Assembler
+      ↓
+Instruction Objects
+      ↓
+Program Loader
+      ↓
+Instruction Memory
+      ↓
+     CPU
+      ↓
+Datapath / ALU / Registers
+      ↓
+Data Memory / I/O
+      ↓
+Program Result
 ```
 
 ### End-to-End Tests
 
-- [ ] Assembly → machine code
-- [ ] Machine code → memory
-- [ ] CPU fetches program
-- [ ] CPU executes program
-- [ ] Program accesses memory
-- [ ] Program uses ALU
-- [ ] Program uses branches
-- [ ] Program performs I/O
-- [ ] Program completes correctly
+- [x] Assembly → instruction objects
+- [x] Instruction objects → memory
+- [x] CPU fetches program
+- [x] CPU executes program
+- [x] Program accesses memory
+- [x] Program uses ALU
+- [x] Program uses jumps
+- [x] Program halts correctly
+- [x] CPU reset and re-execution
+- [x] Example programs
 
 ### Goal
 
-Run a complete program from source code all the way through the simulated hardware.
+Run a complete program from source code through the simulated hardware.
 
 ---
 
@@ -750,41 +686,48 @@ Ensure every layer is reliable.
 
 ### Unit Tests
 
-- [ ] Gate tests
-- [ ] MUX tests
-- [ ] Decoder tests
-- [ ] Encoder tests
-- [ ] Adder tests
-- [ ] ALU tests
-- [ ] Flip-flop tests
+- [x] Gate tests
+- [x] MUX tests
+- [x] Decoder tests
+- [x] Encoder tests
+- [x] Adder tests
+- [x] ALU tests
+- [x] Flip-flop tests
 - [x] Register tests
 - [x] Counter tests
-- [ ] Memory tests
-- [ ] CPU tests
-- [ ] Assembler tests
+- [x] Memory tests
+- [x] ISA tests
+- [x] CPU tests
+- [x] Assembler tests
+- [x] Example tests
 
 ### Integration Tests
 
-- [ ] ALU + registers
-- [ ] Registers + datapath
-- [ ] Datapath + control unit
-- [ ] CPU + memory
-- [ ] CPU + assembler
-- [ ] CPU + I/O
-- [ ] End-to-end programs
+- [x] ALU + registers
+- [x] Registers + datapath
+- [x] Datapath + control unit
+- [x] CPU + memory
+- [x] CPU + assembler
+- [x] End-to-end programs
 
 ### Edge Cases
 
-- [ ] Zero values
-- [ ] Maximum values
-- [ ] Carry
-- [ ] Signed values
-- [ ] Overflow
-- [ ] Invalid instructions
-- [ ] Invalid operands
-- [ ] Memory boundaries
-- [ ] Branch boundaries
-- [ ] Reset behavior
+- [x] Zero values
+- [x] Maximum values
+- [x] Carry
+- [x] Signed values
+- [x] Overflow
+- [x] Invalid instructions
+- [x] Invalid operands
+- [x] Memory boundaries
+- [x] Jump boundaries
+- [x] Reset behavior
+
+### Current Verification
+
+```text
+415 tests passed
+```
 
 ### Goal
 
@@ -798,58 +741,29 @@ Turn the project into a polished engineering project.
 
 ### Code Quality
 
-- [ ] Clean project structure
-- [ ] Refactor duplicated code
-- [ ] Improve naming
-- [ ] Add type hints
-- [ ] Add useful docstrings
-- [ ] Remove unnecessary complexity
+- [x] Clean project structure
+- [x] Type hints
+- [x] Useful docstrings
+- [x] Remove unnecessary complexity
+- [x] Consistent validation
+- [x] Value-based instruction equality
 
 ### Documentation
 
-- [ ] Update README
-- [ ] Document architecture
-- [ ] Document components
-- [ ] Document ALU
-- [ ] Document registers
-- [ ] Document memory
-- [ ] Document datapath
-- [ ] Document control unit
-- [ ] Document ISA
-- [ ] Document assembly syntax
-- [ ] Add example programs
+- [x] README
+- [x] Architecture documentation
+- [x] ISA documentation
+- [x] Assembler documentation
+- [x] Getting-started documentation
+- [x] Example programs
 
-### Final Documentation Architecture
+### V1 Release
 
-```text
-Logic
-  ↓
-Arithmetic
-  ↓
-ALU
-  ↓
-Sequential Logic
-  ↓
-Registers
-  ↓
-Memory
-  ↓
-Datapath
-  ↓
-ISA
-  ↓
-Control Unit
-  ↓
-CPU
-  ↓
-Assembler
-  ↓
-Programs
-  ↓
-I/O
-  ↓
-Runtime
-```
+- [x] Full test suite passes
+- [x] Example integration passes
+- [x] Documentation complete
+- [ ] Git tag `v1.0.0`
+- [ ] GitHub release
 
 ### Goal
 
@@ -857,158 +771,34 @@ Make Astra understandable to someone who has never seen the project before.
 
 ---
 
-## Phase 24 — Future Extensions
-
-These are **not required for the core Astra project** and can be added after the complete computer works:
-
-- [ ] Wider word size
-- [ ] More CPU instructions
-- [ ] Better branch support
-- [ ] Stack-based execution
-- [ ] Interrupts
-- [ ] Pipelining
-- [ ] Cache
-- [ ] Virtual memory
-- [ ] Better debugger
-- [ ] Graphical hardware visualization
-- [ ] Web-based Astra simulator
-- [ ] FPGA implementation
-- [ ] Physical Astra computer
-
----
-
 # 📍 Current Progress
 
-## Completed So Far
+## Astra V1 — Complete
 
-### Phase 1 — Basic Logic Gates
+The core Astra V1 computer is implemented and tested.
 
-- [x] AND gate
-- [x] OR gate
-- [x] XOR gate
-- [x] NOT gate
-- [x] NAND gate
-- [x] NOR gate
-- [x] XNOR gate
-- [x] Input validation
-- [x] Unit tests
+### Completed Hardware
 
-### Phase 2 — Multiplexers & Selectors
-
-- [x] 2-to-1 MUX
-- [x] 4-to-1 MUX
-- [x] 8-to-1 MUX
-- [x] 1-to-2 DEMUX
-- [x] 1-to-4 DEMUX
-- [x] Unit tests
-- [x] Invalid-input tests
-
-### Phase 3 — Encoders & Decoders
-
-- [x] 2-to-4 Decoder
-- [x] 4-to-2 Encoder
-- [x] Input validation
-- [x] Invalid-state handling
-- [x] Unit tests
-
-### Phase 4 — Multi-Bit Logic
-
-- [x] 4-bit AND
-- [x] 4-bit OR
-- [x] 4-bit XOR
-- [x] 4-bit NOT
-- [x] 4-bit MUX
-- [x] Multi-bit input validation
-- [x] Unit tests
-
-### Phase 5 — Arithmetic
-
-- [x] Half Adder
-- [x] Full Adder
-- [x] 4-bit Ripple Carry Adder
-- [x] Carry propagation
-- [x] Carry-out
-- [x] Overflow behavior
-- [x] Addition and edge-case tests
-
-### Phase 6 — ALU
-
-- [x] Define ALU operation codes
-- [x] Logical operations
-- [x] Addition
-- [x] Subtraction
-- [x] Carry handling
-- [x] Signed arithmetic
-- [x] ALU operation selection
-- [x] Zero flag
-- [x] Carry flag
-- [x] Negative/sign flag
-- [x] Overflow flag
-- [x] ALU tests and edge cases
-- [x] Integration tests
-
-### Phase 7 — Sequential Logic
-
-- [x] SR latch
-- [x] D latch
-- [x] D flip-flop
-- [x] State-transition tests
-- [x] Rising-edge behavior
-- [x] Synchronous state updates
-- [ ] Unified reset behavior
-
-### Phase 8 — Clock & Timing
-
-- [ ] Clock abstraction
-- [ ] Clock cycles
-- [x] Rising/falling edge behavior
-- [x] Synchronous state updates
-- [ ] Reset cycle
-- [x] Clock-driven tests
-
-### Phase 9 — Registers
-
+- [x] Basic logic gates
+- [x] Multiplexers / demultiplexers
+- [x] Encoders / decoders
+- [x] Multi-bit logic
+- [x] Half adder
+- [x] Full adder
+- [x] 4-bit ripple-carry adder
+- [x] 4-bit ALU
+- [x] Sequential logic
 - [x] 1-bit register
 - [x] 4-bit register
-- [x] Register load control
-- [ ] Register enable
-- [ ] Register reset
-- [x] Register tests
+- [x] 4-register dual-read/single-write register file
+- [x] 4-bit RAM
+- [x] 16 × 4-bit data memory
+- [x] 4-bit incrementer
+- [x] 4-bit counter
+- [x] 4-bit program counter
+- [x] 16 × 8-bit instruction memory
 
-### Phase 9 — Register File
-
-- [x] 4 registers
-- [x] 2-bit register addressing
-- [x] Read operation
-- [x] Write operation
-- [x] Write enable
-- [x] Two independent read ports
-- [x] Register file tests
-
-### Phase 10 — Counters & Program Counter
-
-- [x] 4-bit Incrementer
-- [x] 4-bit Counter
-- [x] 4-bit Program Counter (PC)
-- [x] PC increment
-- [x] PC load
-- [x] PC reset
-- [x] Jump support
-- [x] PC wraparound
-- [x] PC tests
-
-### Phase 11 — Memory
-
-- [x] 4 × 4-bit RAM
-- [x] Address selection
-- [x] Read operation
-- [x] Write operation
-- [x] Write enable
-- [x] RAM tests
-- [x] Boundary tests
-- [ ] Multi-word / wider instruction memory
-
-### Phase 13 — Instruction Set Architecture
+### Completed ISA
 
 - [x] 8-bit instruction width
 - [x] 4-bit opcode
@@ -1019,8 +809,6 @@ These are **not required for the core Astra project** and can be added after the
 - [x] M-type two-word format
 - [x] J-type format
 - [x] H-type format
-- [x] Define opcode table
-- [x] Define register encoding
 - [x] ADD
 - [x] SUB
 - [x] AND
@@ -1031,57 +819,162 @@ These are **not required for the core Astra project** and can be added after the
 - [x] STORE
 - [x] JUMP
 - [x] HALT
-- [x] Instruction validation
-- [x] Instruction encoding
+
+### Completed CPU
+
 - [x] Instruction decoder
-- [x] Opcode decoding
-- [x] Operand extraction
-- [x] JUMP address decoding
-- [x] LOAD/STORE address-word decoding
-- [x] Invalid instruction detection
-- [x] Encoder tests
-- [x] Decoder tests
+- [x] ALU control
+- [x] Datapath
+- [x] Control unit
+- [x] Fetch unit
+- [x] Fetch/decode
+- [x] CPU cycle
+- [x] CPU
+- [x] CPU reset
+- [x] Program loader
 
-## Current Stage Summary
+### Completed Software Layer
 
-**Core combinational logic, arithmetic, ALU, sequential storage, RAM, Program Counter, Register File, and Astra ISA v1 are implemented and tested.**
+- [x] Two-pass assembler
+- [x] Labels
+- [x] Forward label references
+- [x] Backward label references
+- [x] Assembly validation
+- [x] Example programs
+- [x] End-to-end execution
 
-The current architecture includes:
-
-- 4-bit datapath components
-- 4 registers (`R0`–`R3`)
-- Dual-read, single-write Register File
-- 4-bit RAM with 4-bit addresses
-- 4-bit Program Counter with increment/load/reset behavior
-- 8-bit ISA instructions
-- 4-bit opcodes
-- R-type, N-type, M-type, J-type, and H-type instruction formats
-- Instruction encoding and decoding
-- Two-word `LOAD`/`STORE` encoding
-
-**Current next major component:** CPU Datapath.
-
-The next integration path is:
+### Verification
 
 ```text
-Instruction Decoder
-        ↓
-   Control Signals
-        ↓
-   Register File
-      ↙      ↘
-   Read A   Read B
-      ↓      ↓
-        ALU
-         ↓
-     Write-back
-         ↓
-   Register File
+415 / 415 tests passing
 ```
 
-After the datapath, we will integrate memory access, instruction memory/fetch, the control unit, and finally the complete CPU.
+---
 
-> **Note:** A standalone system-wide clock abstraction and unified reset architecture have not yet been built. Existing components already demonstrate rising-edge and synchronous behavior.
+# 🚀 Astra V2 — Planned
+
+V1 is now a stable baseline. V2 can extend the ISA and CPU capabilities without changing the fundamental V1 architecture unnecessarily.
+
+## Phase 24 — Conditional Branching
+
+First planned ISA extension.
+
+- [ ] Define branch instruction format
+- [ ] Define branch opcode(s)
+- [ ] BEQ
+- [ ] BNE
+- [ ] Branch target handling
+- [ ] Branch control signals
+- [ ] Branch tests
+- [ ] Assembler support
+- [ ] Conditional program examples
+
+### Goal
+
+Allow Astra programs to make decisions and implement real conditional loops.
+
+---
+
+## Phase 25 — Immediate Instructions
+
+- [ ] Define immediate encoding
+- [ ] ADDI
+- [ ] ANDI
+- [ ] ORI
+- [ ] XORI
+- [ ] Immediate decoding
+- [ ] Immediate tests
+- [ ] Assembler support
+
+### Goal
+
+Allow programs to operate directly on constants without first loading values from memory.
+
+---
+
+## Phase 26 — Stack & Subroutines
+
+- [ ] Stack design
+- [ ] Stack pointer
+- [ ] PUSH
+- [ ] POP
+- [ ] CALL
+- [ ] RET
+- [ ] Subroutine examples
+- [ ] Stack tests
+
+### Goal
+
+Support reusable functions and structured programs.
+
+---
+
+## Phase 27 — I/O
+
+- [ ] Memory-mapped I/O
+- [ ] Input device
+- [ ] Output device
+- [ ] Text output
+- [ ] I/O tests
+
+### Goal
+
+Allow Astra programs to communicate with the outside world.
+
+---
+
+## Phase 28 — Larger Architecture
+
+Possible future extensions:
+
+- [ ] Wider datapath
+- [ ] More registers
+- [ ] Larger instruction memory
+- [ ] Larger data memory
+- [ ] More instruction formats
+- [ ] Better branch support
+
+---
+
+## Phase 29 — Advanced CPU Architecture
+
+Possible later research directions:
+
+- [ ] Multi-cycle execution
+- [ ] Pipeline
+- [ ] Pipeline hazards
+- [ ] Forwarding
+- [ ] Branch prediction
+- [ ] Cache
+- [ ] Interrupts
+- [ ] Memory management
+
+These are deliberately deferred until the simpler architecture is stable.
+
+---
+
+## Phase 30 — Debugger & Visualization
+
+- [ ] Interactive register viewer
+- [ ] Interactive memory viewer
+- [ ] Instruction trace
+- [ ] Breakpoints
+- [ ] Clock-cycle visualization
+- [ ] Datapath visualization
+- [ ] Hardware diagram generation
+- [ ] Web-based simulator
+
+---
+
+## Phase 31 — FPGA / Physical Astra
+
+Long-term possibilities:
+
+- [ ] FPGA implementation
+- [ ] Hardware synthesis
+- [ ] Physical CPU prototype
+- [ ] External I/O
+- [ ] Physical Astra computer
 
 ---
 
@@ -1104,23 +997,19 @@ ALU
      ↓
 Sequential Logic
      ↓
-Clock
-     ↓
 Registers
      ↓
-Counters / Program Counter
+Program Counter
      ↓
 Memory
      ↓
-Bus / Datapath
+Datapath
      ↓
 Instruction Set Architecture
      ↓
 Control Unit
      ↓
 CPU
-     ↓
-Simulator / Debugger
      ↓
 Assembler
      ↓
@@ -1133,17 +1022,31 @@ Runtime
 Complete Astra Computer
 ```
 
-Each stage follows an explicit progression:
+Each stage follows:
 
 ```text
-Understand → Design → Implement → Test → Integrate → Document → Next Stage
+Understand
+    ↓
+Design
+    ↓
+Implement
+    ↓
+Test
+    ↓
+Integrate
+    ↓
+Document
+    ↓
+Next Stage
 ```
 
 ---
 
 # 🎯 Ultimate Goal
 
-The ultimate goal of Astra is to build a **complete, understandable, programmable computer from the ground up**.
+The ultimate goal of Astra is to build a:
+
+> **complete, understandable, programmable computer from the ground up**
 
 Starting with:
 
@@ -1151,14 +1054,14 @@ Starting with:
 0s and 1s
 ```
 
-and ending with:
+and progressing toward:
 
 ```text
 Astra Assembly Program
         ↓
      Assembler
         ↓
-   Machine Code
+    Machine Code
         ↓
       Memory
         ↓
@@ -1170,11 +1073,13 @@ Astra Assembly Program
         ↓
     Registers
         ↓
+      Memory
+        ↓
       Output
 ```
 
 The project should make it possible to answer:
 
-> *"How does a computer actually work, from individual logic gates all the way to executing a program?"*
+> **How does a computer actually work, from individual logic gates all the way to executing a program?**
 
 Astra is the attempt to build that answer.

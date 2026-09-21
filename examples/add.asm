@@ -1,0 +1,3 @@
+# Add R1 to R0
+ADD R0, R1
+HALT
