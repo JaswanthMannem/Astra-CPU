@@ -1,24 +1,17 @@
 from enum import Enum
 
 
-def _to_bits(value: int, width: int) -> tuple[int, ...]:
-    bits = []
+class Register(Enum):
+    """Registers available in the Astra ISA."""
 
-    for _ in range(width):
-        bits.append(value % 2)
-        value = value // 2
-
-    bits.reverse()
-
-    return tuple(bits)
+    R0 = 0
+    R1 = 1
+    R2 = 2
+    R3 = 3
 
 
 class Opcode(Enum):
-    """
-    4-bit operation codes for Astra ISA v1.
-
-    Each opcode identifies the operation that the CPU must execute.
-    """
+    """Operation codes supported by the Astra ISA."""
 
     ADD = 0
     SUB = 1
@@ -32,69 +25,34 @@ class Opcode(Enum):
     HALT = 9
 
 
-class Register(Enum):
-    """
-    Registers available in the Astra ISA.
-
-    Each register is identified by a 2-bit value.
-    """
-
-    R0 = 0
-    R1 = 1
-    R2 = 2
-    R3 = 3
-
-
 class Instruction:
-    """
-    Represents an instruction in the Astra ISA v1.
+    """Represent a single Astra machine instruction.
 
-    Astra instructions use 8-bit words.
-
-    Instruction formats:
+    Astra uses 8-bit instruction words and supports several
+    instruction formats:
 
     R-type:
-        opcode | destination | source
-        4 bits |    2 bits   | 2 bits
+        opcode(4) | destination(2) | source(2)
 
-        Used by:
-            ADD, SUB, AND, OR, XOR
+    NOT:
+        opcode(4) | destination(2) | 00
 
-    N-type:
-        opcode | destination | 00
-        4 bits |    2 bits   | 2 bits
+    LOAD / STORE:
+        These instructions require two 8-bit words because
+        the opcode, register, and 4-bit memory address require
+        10 bits in total.
 
-        Used by:
-            NOT
+        First word:
+            opcode(4) | register(2) | 00
 
-    M-type:
-        Word 1:
-            opcode | register | 00
-            4 bits |  2 bits  | 2 bits
+        Second word:
+            0000 | address(4)
 
-        Word 2:
-            0000 | address
-             4 bits | 4 bits
+    JUMP:
+        opcode(4) | address(4)
 
-        Used by:
-            LOAD, STORE
-
-    J-type:
-        opcode | address
-        4 bits |  4 bits
-
-        Used by:
-            JUMP
-
-    H-type:
-        opcode | 0000
-        4 bits | 4 bits
-
-        Used by:
-            HALT
-
-    LOAD and STORE are two-word instructions.
-    All other instructions are one-word instructions.
+    HALT:
+        opcode(4) | 0000
     """
 
     def __init__(
@@ -102,10 +60,23 @@ class Instruction:
         opcode: Opcode,
         destination: Register | None = None,
         source: Register | None = None,
-        address: int | None = None
+        address: int | None = None,
     ) -> None:
+        """Create an Astra instruction.
 
-        # Basic type validation
+        Args:
+            opcode: Operation performed by the instruction.
+            destination: Destination register for register-based
+                and LOAD instructions.
+            source: Source register for register-based and STORE
+                instructions.
+            address: Four-bit memory address for LOAD, STORE, and
+                JUMP instructions.
+
+        Raises:
+            TypeError: If an argument has an invalid type.
+            ValueError: If the instruction format is invalid.
+        """
         if not isinstance(opcode, Opcode):
             raise TypeError("opcode must be an Opcode")
 
@@ -115,283 +86,267 @@ class Instruction:
         if source is not None and not isinstance(source, Register):
             raise TypeError("source must be a Register")
 
-        # Address validation
         if address is not None:
             if not isinstance(address, int):
                 raise TypeError("address must be an integer")
 
-            if address < 0 or address > 15:
+            if not 0 <= address <= 15:
                 raise ValueError("address must be between 0 and 15")
-
-        # Register-register instructions
-        register_register_opcodes = (
-            Opcode.ADD,
-            Opcode.SUB,
-            Opcode.AND,
-            Opcode.OR,
-            Opcode.XOR
-        )
-
-        if opcode in register_register_opcodes:
-
-            if destination is None:
-                raise ValueError(
-                    "destination register is required for this instruction"
-                )
-
-            if source is None:
-                raise ValueError(
-                    "source register is required for this instruction"
-                )
-
-            if address is not None:
-                raise ValueError(
-                    "register-register instruction does not accept an address"
-                )
-
-        # NOT instruction
-        elif opcode == Opcode.NOT:
-
-            if destination is None:
-                raise ValueError(
-                    "destination register is required for NOT"
-                )
-
-            if source is not None:
-                raise ValueError(
-                    "NOT instruction does not accept a source register"
-                )
-
-            if address is not None:
-                raise ValueError(
-                    "NOT instruction does not accept an address"
-                )
-
-        # LOAD instruction
-        elif opcode == Opcode.LOAD:
-
-            if destination is None:
-                raise ValueError(
-                    "destination register is required for LOAD"
-                )
-
-            if source is not None:
-                raise ValueError(
-                    "LOAD instruction does not accept a source register"
-                )
-
-            if address is None:
-                raise ValueError(
-                    "address is required for LOAD"
-                )
-
-        # STORE instruction
-        elif opcode == Opcode.STORE:
-
-            if destination is not None:
-                raise ValueError(
-                    "STORE instruction does not accept a destination register"
-                )
-
-            if source is None:
-                raise ValueError(
-                    "source register is required for STORE"
-                )
-
-            if address is None:
-                raise ValueError(
-                    "address is required for STORE"
-                )
-
-        # JUMP instruction
-        elif opcode == Opcode.JUMP:
-
-            if destination is not None:
-                raise ValueError(
-                    "JUMP instruction does not accept a destination register"
-                )
-
-            if source is not None:
-                raise ValueError(
-                    "JUMP instruction does not accept a source register"
-                )
-
-            if address is None:
-                raise ValueError(
-                    "address is required for JUMP"
-                )
-
-        # HALT instruction
-        elif opcode == Opcode.HALT:
-
-            if destination is not None:
-                raise ValueError(
-                    "HALT instruction does not accept a destination register"
-                )
-
-            if source is not None:
-                raise ValueError(
-                    "HALT instruction does not accept a source register"
-                )
-
-            if address is not None:
-                raise ValueError(
-                    "HALT instruction does not accept an address"
-                )
 
         self.opcode = opcode
         self.destination = destination
         self.source = source
         self.address = address
 
-    def encode(self) -> tuple[tuple[int, ...], ...]:
+        self._validate_format()
+
+    def _validate_format(self) -> None:
+        """Validate operands according to the instruction format.
+
+        Raises:
+            ValueError: If operands do not match the opcode's
+                required format.
         """
-        Encode the instruction into one or more 8-bit words.
-
-        Returns:
-            A tuple containing one or two 8-bit words.
-
-        R-type:
-            opcode | destination | source
-
-        NOT:
-            opcode | destination | 00
-
-        LOAD:
-            word 1 = opcode | destination | 00
-            word 2 = 0000 | address
-
-        STORE:
-            word 1 = opcode | source | 00
-            word 2 = 0000 | address
-
-        JUMP:
-            opcode | address
-
-        HALT:
-            opcode | 0000
-        """
-
-        opcode_bits = _to_bits(self.opcode.value, 4)
-
-        register_register_opcodes = (
+        if self.opcode in (
             Opcode.ADD,
             Opcode.SUB,
             Opcode.AND,
             Opcode.OR,
-            Opcode.XOR
+            Opcode.XOR,
+        ):
+            if self.destination is None:
+                raise ValueError(
+                    f"{self.opcode.name} requires a destination register"
+                )
+
+            if self.source is None:
+                raise ValueError(
+                    f"{self.opcode.name} requires a source register"
+                )
+
+            if self.address is not None:
+                raise ValueError(
+                    f"{self.opcode.name} does not accept an address"
+                )
+
+        elif self.opcode == Opcode.NOT:
+            if self.destination is None:
+                raise ValueError("NOT requires a destination register")
+
+            if self.source is not None:
+                raise ValueError("NOT does not accept a source register")
+
+            if self.address is not None:
+                raise ValueError("NOT does not accept an address")
+
+        elif self.opcode == Opcode.LOAD:
+            if self.destination is None:
+                raise ValueError(
+                    "LOAD requires a destination register"
+                )
+
+            if self.address is None:
+                raise ValueError("LOAD requires an address")
+
+            if self.source is not None:
+                raise ValueError("LOAD does not accept a source register")
+
+        elif self.opcode == Opcode.STORE:
+            if self.source is None:
+                raise ValueError("STORE requires a source register")
+
+            if self.address is None:
+                raise ValueError("STORE requires an address")
+
+            if self.destination is not None:
+                raise ValueError(
+                    "STORE does not accept a destination register"
+                )
+
+        elif self.opcode == Opcode.JUMP:
+            if self.address is None:
+                raise ValueError("JUMP requires an address")
+
+            if self.destination is not None:
+                raise ValueError(
+                    "JUMP does not accept a destination register"
+                )
+
+            if self.source is not None:
+                raise ValueError(
+                    "JUMP does not accept a source register"
+                )
+
+        elif self.opcode == Opcode.HALT:
+            if self.destination is not None:
+                raise ValueError(
+                    "HALT does not accept a destination register"
+                )
+
+            if self.source is not None:
+                raise ValueError(
+                    "HALT does not accept a source register"
+                )
+
+            if self.address is not None:
+                raise ValueError("HALT does not accept an address")
+
+    def __eq__(self, other: object) -> bool:
+        """Compare two instructions by their encoded meaning.
+
+        Two Instruction objects are equal when their opcode,
+        destination register, source register, and address are
+        identical.
+
+        Args:
+            other: Object to compare with this instruction.
+
+        Returns:
+            True when both instructions represent the same
+            instruction; otherwise False.
+        """
+        if not isinstance(other, Instruction):
+            return NotImplemented
+
+        return (
+            self.opcode == other.opcode
+            and self.destination == other.destination
+            and self.source == other.source
+            and self.address == other.address
         )
 
-        # R-type
-        if self.opcode in register_register_opcodes:
+    def __repr__(self) -> str:
+        """Return a useful debugging representation."""
+        return (
+            "Instruction("
+            f"opcode={self.opcode!r}, "
+            f"destination={self.destination!r}, "
+            f"source={self.source!r}, "
+            f"address={self.address!r}"
+            ")"
+        )
 
-            destination_bits = _to_bits(
-                self.destination.value,
-                2
+    @staticmethod
+    def _register_to_bits(register: Register) -> tuple[int, int]:
+        """Convert a register into its two-bit encoding.
+
+        Args:
+            register: Register to encode.
+
+        Returns:
+            Two-bit tuple representing the register.
+        """
+        value = register.value
+
+        return (
+            value // 2,
+            value % 2,
+        )
+
+    @staticmethod
+    def _address_to_bits(address: int) -> tuple[int, int, int, int]:
+        """Convert a four-bit address into a bit tuple.
+
+        Args:
+            address: Integer address from 0 through 15.
+
+        Returns:
+            Four-bit tuple representing the address.
+        """
+        return (
+            (address // 8) % 2,
+            (address // 4) % 2,
+            (address // 2) % 2,
+            address % 2,
+        )
+
+    def encode(self) -> tuple[tuple[int, ...], ...]:
+        """Encode the instruction into one or two 8-bit words.
+
+        Returns:
+            A tuple containing one or two 8-bit instruction words.
+
+        Raises:
+            ValueError: If the instruction cannot be encoded.
+        """
+        opcode_bits = (
+            (self.opcode.value // 8) % 2,
+            (self.opcode.value // 4) % 2,
+            (self.opcode.value // 2) % 2,
+            self.opcode.value % 2,
+        )
+
+        if self.opcode in (
+            Opcode.ADD,
+            Opcode.SUB,
+            Opcode.AND,
+            Opcode.OR,
+            Opcode.XOR,
+        ):
+            destination_bits = self._register_to_bits(
+                self.destination
+            )
+            source_bits = self._register_to_bits(
+                self.source
             )
 
-            source_bits = _to_bits(
-                self.source.value,
-                2
-            )
-
-            word = (
+            return (
                 opcode_bits
                 + destination_bits
-                + source_bits
+                + source_bits,
             )
 
-            return (word,)
-
-        # N-type
-        elif self.opcode == Opcode.NOT:
-
-            destination_bits = _to_bits(
-                self.destination.value,
-                2
+        if self.opcode == Opcode.NOT:
+            destination_bits = self._register_to_bits(
+                self.destination
             )
 
-            word = (
+            return (
                 opcode_bits
                 + destination_bits
+                + (0, 0),
+            )
+
+        if self.opcode == Opcode.JUMP:
+            address_bits = self._address_to_bits(self.address)
+
+            return (
+                opcode_bits
+                + address_bits,
+            )
+
+        if self.opcode == Opcode.HALT:
+            return (
+                opcode_bits
+                + (0, 0, 0, 0),
+            )
+
+        if self.opcode in (Opcode.LOAD, Opcode.STORE):
+            register = (
+                self.destination
+                if self.opcode == Opcode.LOAD
+                else self.source
+            )
+
+            register_bits = self._register_to_bits(register)
+            address_bits = self._address_to_bits(self.address)
+
+            first_word = (
+                opcode_bits
+                + register_bits
                 + (0, 0)
             )
 
-            return (word,)
-
-        # M-type: LOAD
-        elif self.opcode == Opcode.LOAD:
-
-            destination_bits = _to_bits(
-                self.destination.value,
-                2
-            )
-
-            address_bits = _to_bits(
-                self.address,
-                4
-            )
-
-            word1 = (
-                opcode_bits
-                + destination_bits
-                + (0, 0)
-            )
-
-            word2 = (
+            second_word = (
                 (0, 0, 0, 0)
                 + address_bits
             )
 
-            return (word1, word2)
-
-        # M-type: STORE
-        elif self.opcode == Opcode.STORE:
-
-            source_bits = _to_bits(
-                self.source.value,
-                2
+            return (
+                first_word,
+                second_word,
             )
 
-            address_bits = _to_bits(
-                self.address,
-                4
-            )
-
-            word1 = (
-                opcode_bits
-                + source_bits
-                + (0, 0)
-            )
-
-            word2 = (
-                (0, 0, 0, 0)
-                + address_bits
-            )
-
-            return (word1, word2)
-
-        # J-type
-        elif self.opcode == Opcode.JUMP:
-
-            address_bits = _to_bits(
-                self.address,
-                4
-            )
-
-            word = (
-                opcode_bits
-                + address_bits
-            )
-
-            return (word,)
-
-        # H-type
-        elif self.opcode == Opcode.HALT:
-
-            word = (
-                opcode_bits
-                + (0, 0, 0, 0)
-            )
-
-            return (word,)
+        raise ValueError(
+            f"unsupported opcode: {self.opcode.name}"
+        )
