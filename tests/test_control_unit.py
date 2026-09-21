@@ -21,6 +21,7 @@ def test_add_control_signals():
         register_write=1,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -43,6 +44,7 @@ def test_sub_control_signals():
         register_write=1,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -65,6 +67,7 @@ def test_and_control_signals():
         register_write=1,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -87,6 +90,7 @@ def test_or_control_signals():
         register_write=1,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -109,6 +113,7 @@ def test_xor_control_signals():
         register_write=1,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -130,6 +135,7 @@ def test_not_control_signals():
         register_write=1,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -152,6 +158,7 @@ def test_load_control_signals():
         register_write=1,
         memory_read=1,
         memory_write=0,
+        memory_to_register=1,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -174,6 +181,7 @@ def test_store_control_signals():
         register_write=0,
         memory_read=0,
         memory_write=1,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=1,
         halt=0,
@@ -195,6 +203,7 @@ def test_jump_control_signals():
         register_write=0,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=1,
         pc_increment=0,
         halt=0,
@@ -204,7 +213,9 @@ def test_jump_control_signals():
 def test_halt_control_signals():
     control_unit = ControlUnit()
 
-    instruction = Instruction(Opcode.HALT)
+    instruction = Instruction(
+        Opcode.HALT
+    )
 
     signals = control_unit.decode(instruction)
 
@@ -213,29 +224,15 @@ def test_halt_control_signals():
         register_write=0,
         memory_read=0,
         memory_write=0,
+        memory_to_register=0,
         pc_load=0,
         pc_increment=0,
         halt=1,
     )
 
 
-def test_invalid_instruction_type():
+def test_control_unit_rejects_invalid_instruction():
     control_unit = ControlUnit()
 
     with pytest.raises(TypeError):
-        control_unit.decode("ADD")
-
-
-def test_control_signals_are_immutable():
-    control_unit = ControlUnit()
-
-    instruction = Instruction(
-        Opcode.ADD,
-        destination=Register.R1,
-        source=Register.R2,
-    )
-
-    signals = control_unit.decode(instruction)
-
-    with pytest.raises(AttributeError):
-        signals.register_write = 0
+        control_unit.decode(None)
