@@ -1150,3 +1150,188 @@ def test_cpu_cycle_multiple_load_store_operations():
     assert r0 == (1, 1, 0, 0)
 
     assert read_pc(cpu) == (1, 0, 0, 0)
+
+# ============================================================
+# JUMP
+# ============================================================
+
+
+def test_cpu_cycle_jump_changes_pc():
+    instruction_memory = InstructionMemory()
+
+    cpu = CPUCycle(
+        instruction_memory
+    )
+
+    jump = Instruction(
+        Opcode.JUMP,
+        address=10,
+    )
+
+    write_instruction(
+        instruction_memory,
+        (0, 0, 0, 0),
+        jump.encode()[0],
+    )
+
+    cpu.cycle(clock=0)
+    cpu.cycle(clock=1)
+
+    assert read_pc(cpu) == (1, 0, 1, 0)
+
+
+def test_cpu_cycle_jump_does_not_increment_pc():
+    instruction_memory = InstructionMemory()
+
+    cpu = CPUCycle(
+        instruction_memory
+    )
+
+    jump = Instruction(
+        Opcode.JUMP,
+        address=10,
+    )
+
+    write_instruction(
+        instruction_memory,
+        (0, 0, 0, 0),
+        jump.encode()[0],
+    )
+
+    cpu.cycle(clock=0)
+    cpu.cycle(clock=1)
+
+    assert read_pc(cpu) == (1, 0, 1, 0)
+
+
+def test_cpu_cycle_jump_chain():
+    instruction_memory = InstructionMemory()
+
+    cpu = CPUCycle(
+        instruction_memory
+    )
+
+    jump_to_10 = Instruction(
+        Opcode.JUMP,
+        address=10,
+    )
+
+    jump_to_7 = Instruction(
+        Opcode.JUMP,
+        address=7,
+    )
+
+    write_instruction(
+        instruction_memory,
+        (0, 0, 0, 0),
+        jump_to_10.encode()[0],
+    )
+
+    write_instruction(
+        instruction_memory,
+        (1, 0, 1, 0),
+        jump_to_7.encode()[0],
+    )
+
+    cpu.cycle(clock=0)
+    cpu.cycle(clock=1)
+
+    assert read_pc(cpu) == (1, 0, 1, 0)
+
+    cpu.cycle(clock=0)
+    cpu.cycle(clock=1)
+
+    assert read_pc(cpu) == (0, 1, 1, 1)
+
+
+# ============================================================
+# HALT
+# ============================================================
+
+
+def test_cpu_cycle_halt():
+    instruction_memory = InstructionMemory()
+
+    cpu = CPUCycle(
+        instruction_memory
+    )
+
+    halt = Instruction(
+        Opcode.HALT,
+    )
+
+    write_instruction(
+        instruction_memory,
+        (0, 0, 0, 0),
+        halt.encode()[0],
+    )
+
+    cpu.cycle(clock=0)
+    cpu.cycle(clock=1)
+
+    assert cpu.halted is True
+
+
+def test_cpu_cycle_halt_does_not_increment_pc():
+    instruction_memory = InstructionMemory()
+
+    cpu = CPUCycle(
+        instruction_memory
+    )
+
+    halt = Instruction(
+        Opcode.HALT,
+    )
+
+    write_instruction(
+        instruction_memory,
+        (0, 0, 0, 0),
+        halt.encode()[0],
+    )
+
+    cpu.cycle(clock=0)
+    cpu.cycle(clock=1)
+
+    assert cpu.halted is True
+    assert read_pc(cpu) == (0, 0, 0, 0)
+
+
+def test_cpu_cycle_halt_prevents_subsequent_execution():
+    instruction_memory = InstructionMemory()
+
+    cpu = CPUCycle(
+        instruction_memory
+    )
+
+    halt = Instruction(
+        Opcode.HALT,
+    )
+
+    add = Instruction(
+        Opcode.ADD,
+        destination=Register.R1,
+        source=Register.R2,
+    )
+
+    write_instruction(
+        instruction_memory,
+        (0, 0, 0, 0),
+        halt.encode()[0],
+    )
+
+    write_instruction(
+        instruction_memory,
+        (0, 0, 0, 1),
+        add.encode()[0],
+    )
+
+    cpu.cycle(clock=0)
+    cpu.cycle(clock=1)
+
+    assert cpu.halted is True
+    assert read_pc(cpu) == (0, 0, 0, 0)
+
+    result = cpu.cycle(clock=0)
+
+    assert result == (None, None)
+    assert read_pc(cpu) == (0, 0, 0, 0)

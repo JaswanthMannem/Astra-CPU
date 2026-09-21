@@ -23,6 +23,8 @@ class CPUCycle:
         NOT
         LOAD
         STORE
+        JUMP
+        HALT
     """
 
     def __init__(
@@ -55,6 +57,8 @@ class CPUCycle:
         self.control_unit = ControlUnit()
         self.datapath = Datapath()
         self.data_memory = DataMemory16x4()
+
+        self.halted = False
 
     @staticmethod
     def _dict_to_instruction(
@@ -142,6 +146,13 @@ class CPUCycle:
             raise ValueError(
                 "clock must be 0 or 1"
             )
+
+        # ---------------------------------------------
+        # HALTED CPU
+        # ---------------------------------------------
+
+        if self.halted:
+            return None, None
 
         # ---------------------------------------------
         # FETCH
@@ -293,18 +304,47 @@ class CPUCycle:
             Opcode.STORE,
         ):
 
+            # LOAD / STORE occupy two instruction words.
             self._advance_pc(
                 pc,
                 2,
                 clock
             )
 
+        elif control_signals.pc_load == 1:
+
+            # -----------------------------------------
+            # JUMP
+            #
+            # PC <- instruction.address
+            # -----------------------------------------
+
+            jump_address = self._address_to_bits(
+                instruction.address
+            )
+
+            self.program_counter.update(
+                load_data=jump_address,
+                load=1,
+                increment=0,
+                reset=0,
+                clock=clock,
+            )
+
         elif control_signals.pc_increment == 1:
 
+            # Normal one-word instruction.
             self._advance_pc(
                 pc,
                 1,
                 clock
             )
+
+        # ---------------------------------------------
+        # HALT
+        # ---------------------------------------------
+
+        if control_signals.halt == 1:
+            self.halted = True
 
         return decoded, result
